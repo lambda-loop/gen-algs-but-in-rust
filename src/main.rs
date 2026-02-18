@@ -8,7 +8,7 @@ mod examples;
 
 fn main() {
     const w_size: usize  = examples::word::ANSWER.len();
-    let mut nature: Nature<10_000,100,10_000, Word<w_size>> = Nature::new();
+    let mut nature: Nature<10_000,1,10_000, Word<w_size>> = Nature::new();
 
     let out = nature.run();
     let text: String = out.iter().map(|b| *b as char).collect();
