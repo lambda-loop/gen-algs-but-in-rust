@@ -1,0 +1,91 @@
+use crate::genetic::genome::Genome;
+
+use rand::prelude::*;
+
+#[derive(PartialEq)]
+pub enum Status {
+    Running,
+    Over,
+}
+
+pub struct Nature
+    <const GEN_SIZE   : usize
+    ,const ELITE_SIZE : usize
+    ,const MAX_GENS   : u64
+    ,Dna: Genome> {
+        population: [Dna; GEN_SIZE],
+        status: Status,
+        current_gen: u64, // bigint??
+}
+
+impl<const GEN_SIZE   : usize
+    ,const ELITE_SIZE : usize
+    ,const MAX_GENS   : u64
+    ,Dna: Genome + Clone> Nature
+    <GEN_SIZE, ELITE_SIZE,MAX_GENS, Dna> {
+
+    pub fn run(mut self) -> Dna {
+        while self.current_gen < MAX_GENS
+            || self.status != Status::Running {
+            self.next_generation()
+        }
+
+        self.population[0]
+    }
+    
+    fn next_generation(&mut self) {
+
+        let elite = Self::pick_elite(&self.population);
+
+        // abuse
+        let fit_best = Dna::fit(&elite[0]);
+        if Dna::done(fit_best) {
+            self.status = Status::Over;
+        }
+          
+
+        let diff   = GEN_SIZE - ELITE_SIZE;
+        let middle = ELITE_SIZE + diff/2;
+        let mut rng = rand::rng();
+
+        for i in (ELITE_SIZE..middle).step_by(2) {
+            let jl = rng.random_range(0..ELITE_SIZE);
+            let jr = rng.random_range(0..ELITE_SIZE);
+
+            let mut vl = elite[jl].clone();
+            let mut vr = elite[jr].clone();
+
+            vl.cross(&mut vr);
+
+            self.population[i]   = vl;
+            self.population[i+1] = vr;
+        }
+
+        for i in middle..GEN_SIZE {
+            // WARNING: itll be optimized to reuse the same space??
+            let j = rng.random_range(0..ELITE_SIZE);
+            let mut v = elite[j].clone();
+            v.point();
+            self.population[i] = v;
+        }
+
+        for (i, v) in elite.into_iter().enumerate() {
+          self.population[i] = v;
+        }
+
+        self.current_gen += 1;
+    }
+
+    fn pick_elite (pop: &[Dna; GEN_SIZE]) -> [Dna; ELITE_SIZE] {
+        todo!()
+    }
+
+
+
+
+
+
+
+}
+
+
