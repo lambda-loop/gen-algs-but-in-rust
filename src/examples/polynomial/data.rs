@@ -1,11 +1,9 @@
 
-use approx::relative_eq;
-use num_bigint::{BigInt, BigUint};
+pub use num_bigint::{BigInt, BigUint};
 
-use crate::genetic::genome::Genome;
+pub type Num = BigInt; //i128;
 
-type Num = BigInt; //i128;
-enum Op {
+pub enum Op {
     Inp,
     Lit(Num),
     Add,
@@ -15,7 +13,6 @@ enum Op {
 }
 
 pub struct Polynomial(Vec<Op>);
-
 impl Polynomial {
     pub fn eval(&self, input: Num) -> Num {
         let mut stack = Vec::new();
@@ -73,46 +70,3 @@ impl Polynomial {
 
     }
 }
-
-// pub struct Polynomial(Vec<Op>);
-struct OrderedFloat(f64);
-
-impl PartialEq for OrderedFloat {
-    fn eq(&self, other: &Self) -> bool {
-        relative_eq!(self.0, other.0, epsilon = 1e-12)
-    }
-}
-
-impl Eq for OrderedFloat {} 
-
-impl PartialOrd for OrderedFloat {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.0.partial_cmp(&other.0)
-    }
-}
-
-impl Genome for Polynomial {
-    type Score = i32;
-
-    fn fit(&self) -> Self::Score {
-        todo!()
-    }
-
-    fn new() -> Self {
-        todo!()
-    }
-
-    fn point(&mut self) {
-        todo!()
-    }
-
-    fn cross(&mut self, other: &mut Self) {
-        todo!()
-    }
-
-    fn done(score: Self::Score) -> bool {
-        todo!()
-    }
-}
-
-
