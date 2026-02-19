@@ -39,7 +39,7 @@ impl Op {
 pub struct Polynomial(pub Vec<Op>);
 impl Polynomial {
     pub fn eval(&self, input: i32) -> BigInt {
-        if self.0.is_empty() { return 0.into() }
+        // if self.0.is_empty() { return 0.into() }
 
         let mut stack: Vec<BigInt> = Vec::new();
         for op in &self.0 {
@@ -85,7 +85,7 @@ impl Polynomial {
             }
         }
 
-        stack.remove(0)
+        stack.pop().unwrap_or_else(|| BigInt::from(0))
     }
 
     fn compile (&self) -> fn(input: BigInt) -> BigInt {

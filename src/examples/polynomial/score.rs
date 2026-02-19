@@ -8,7 +8,7 @@ pub struct OrderedFloat(pub f64);
 impl PartialEq for OrderedFloat {
     fn eq(&self, other: &Self) -> bool {
         if self.0.is_nan() && other.0.is_nan() {
-            return true;
+            return false;
         }
         if self.0.is_nan() || other.0.is_nan() {
             return false;

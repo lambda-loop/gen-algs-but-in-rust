@@ -1,6 +1,6 @@
 // use num_bigint::{BigInt, BigUint};
 
-use std::{collections::HashMap, sync::LazyLock};
+use std::{cmp::Reverse, collections::HashMap, sync::{LazyLock, OnceLock}};
 
 use approx::relative_eq;
 use rand::{distr::Uniform, prelude::*};
@@ -19,40 +19,65 @@ const ANSWER: LazyLock<Polynomial> = LazyLock::new(|| {
         Op::Inp, Op::Inp, Op::Mul,           // x²
         Op::Lit(3), Op::Inp, Op::Mul, // 3x
         Op::Add,  Op::Lit(10), Op::Sub, // (_ + _ - 10
-    ])
+    ]) });
+
+static oracle: LazyLock<Oracle<N_INPUTS>> = LazyLock::new(|| {
+    println!("initializing OnceLock");
+    Oracle::new()
 });
 
 const N_INPUTS: usize = 1_000;
-const INPUTS: LazyLock<[i32; N_INPUTS]> = LazyLock::new(|| {
-    let mut rng = rand::rng();
-    let i =-10_000;
-    let j = 10_000;
+struct Oracle<const N_INPUTS: usize> {
+    pub inputs: [i32; N_INPUTS],
+    pub table: HashMap<i32, BigInt>,
+}
 
-    let dist = Uniform::new_inclusive(i, j);
+impl<const N_INPUTS: usize> Oracle<N_INPUTS> {
+    fn new() -> Self {
+        // println!("initializing OnceLock");
+        let inputs: [i32; N_INPUTS] = {
+            dbg!("one time");
+            let mut rng = rand::rng();
+            let i =-10_000;
+            let j = 10_000;
 
-    (0..N_INPUTS).map(|_| dist.unwrap().sample(&mut rng))
-        .collect::<Vec<_>>()
-        .try_into()
-        .unwrap()
-});
+            let dist = Uniform::new_inclusive(i, j);
 
-const ORACLE: LazyLock<HashMap<i32, BigInt>> = LazyLock::new(|| {
-    let mut table = HashMap::new();
-    for i in *INPUTS {
-        let score_i = Polynomial::eval(&ANSWER, i);
-        table.insert(i, score_i);
+            (0..N_INPUTS).map(|_| dist.unwrap().sample(&mut rng))
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap()
+        };
+
+        let table: HashMap<i32, BigInt> = {
+            let mut table = HashMap::new();
+            for i in inputs {
+                let score_i = Polynomial::eval(&ANSWER, i);
+                table.insert(i, score_i);
+            }
+        
+            table
+        };
+
+        Oracle {
+            inputs,
+            table
+        }
     }
-
-    table
-});
+}
 
 impl Genome for Polynomial {
-    type Score = OrderedFloat;
+    type Score = Reverse<OrderedFloat>;
 
     fn fit(&self) -> Self::Score {
         let mut diffs = 0.;
-        for i in *INPUTS {
-            let delta = ORACLE.get(&i).unwrap() - self.eval(i);
+        for i in oracle.inputs {
+            let oracle_val = oracle.table.get(&i).unwrap_or_else(|| {
+                panic!("not found key: {} oracle size: {}, unique inputs: {}", 
+                i, oracle.table.len(), oracle.inputs.iter().collect::<std::collections::HashSet<_>>().len());
+});
+            let delta = oracle.table.get(&i).unwrap() - self.eval(i);
+
             let delta_p = delta.pow(2);
             let delta_f = delta_p.to_f64().unwrap_or(f64::NAN);
             diffs += delta_f;
@@ -60,7 +85,10 @@ impl Genome for Polynomial {
 
         const N: f64 = (N_INPUTS - 1) as f64;
         let s = diffs/N;
-        OrderedFloat(s.sqrt())
+        if s.is_nan() { return Reverse(OrderedFloat(f64::INFINITY)) }
+        // dbg!(s);
+        // dbg!(s.sqrt());
+        Reverse(OrderedFloat(s.sqrt()))
     }
 
     fn new() -> Self {
@@ -97,8 +125,9 @@ impl Genome for Polynomial {
     }
 
     fn done(score: Self::Score) -> bool {
-        relative_eq!(score.0, 0., epsilon = 1e-12)
-        // score.0 == 0.
+        score == Reverse(OrderedFloat(0.))
+        // relative_eq!(score.0, 0., epsilon = 1e-12)
+        // // score.0 == 0.
     }
 
 }

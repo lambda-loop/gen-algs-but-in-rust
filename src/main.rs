@@ -9,9 +9,9 @@ use examples::polynomial::{self, data::Polynomial};
 
 fn main() {
     // const w_size: usize  = examples::word::ANSWER.len();
-    let mut nature: Nature<10_000,1,10_000, Polynomial> = Nature::new();
+    let mut nature: Nature<1_000,20,10_000, Polynomial> = Nature::new();
 
-    // let out = nature.run();
+    let out = nature.run();
     // let text: String = out.iter().map(|b| *b as char).collect();
 
     dbg!(&nature.population[0]);
