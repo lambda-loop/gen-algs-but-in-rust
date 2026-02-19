@@ -4,8 +4,8 @@ use std::{mem};
 use crate::genetic::genome::Genome;
 
 pub type Word<const N: usize> = [u8; N];
-// pub const ANSWER: [u8; 100] = *b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.";
-pub const ANSWER: [u8; 12] = *b"Hello, Rust!";
+pub const ANSWER: [u8; 100] = *b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.";
+// pub const ANSWER: [u8; 12] = *b"Hello, Rust!";
 // pub const ANSWER: [char; 100] = [
 //     'L', 'o', 'r', 'e', 'm', ' ', 'i', 'p', 's', 'u', 'm', ' ', 'd', 'o', 'l', 'o', 'r', ' ', 's', 'i', 
 //     't', ' ', 'a', 'm', 'e', 't', ',', ' ', 'c', 'o', 'n', 's', 'e', 'c', 't', 'e', 't', 'u', 'r', ' ', 

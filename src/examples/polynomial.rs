@@ -1,4 +1,5 @@
 
+use approx::relative_eq;
 use num_bigint::{BigInt, BigUint};
 
 use crate::genetic::genome::Genome;
@@ -73,9 +74,25 @@ impl Polynomial {
     }
 }
 
+// pub struct Polynomial(Vec<Op>);
+struct OrderedFloat(f64);
+
+impl PartialEq for OrderedFloat {
+    fn eq(&self, other: &Self) -> bool {
+        relative_eq!(self.0, other.0, epsilon = 1e-12)
+    }
+}
+
+impl Eq for OrderedFloat {} 
+
+impl PartialOrd for OrderedFloat {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
 
 impl Genome for Polynomial {
-    type Score = f64;
+    type Score = i32;
 
     fn fit(&self) -> Self::Score {
         todo!()
@@ -97,4 +114,5 @@ impl Genome for Polynomial {
         todo!()
     }
 }
+
 
