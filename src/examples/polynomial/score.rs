@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use approx::relative_eq;
 
 
-struct OrderedFloat(f64);
+pub struct OrderedFloat(pub f64);
 
 impl PartialEq for OrderedFloat {
     fn eq(&self, other: &Self) -> bool {

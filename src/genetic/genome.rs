@@ -6,6 +6,7 @@ pub trait Genome {
     fn fit(&self) -> Self::Score; 
 
     fn new() -> Self;
+    // TODO: taking the ownership could be great!
     fn point(&mut self);
     fn cross(&mut self, other: &mut Self); 
 
