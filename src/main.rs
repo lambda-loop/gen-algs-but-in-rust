@@ -1,10 +1,11 @@
-use crate::{examples::word::Word, genetic::simple_evol::Nature};
+use crate::{examples::word::Word};
 
 
 mod genetic;
 
 mod examples;
 use examples::polynomial::{self, data::Polynomial};
+use genetic::strategy::classic::Nature;
 
 
 fn main() {
