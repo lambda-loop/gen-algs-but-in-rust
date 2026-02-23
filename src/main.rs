@@ -25,3 +25,4 @@ fn main() {
     dbg!(nature.status);
 
 }
+

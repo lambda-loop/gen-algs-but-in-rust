@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 
 
 pub trait Genome {
@@ -13,6 +15,7 @@ pub trait Genome {
     fn done(score: Self::Score) -> bool;
 
 }
+
 
 #[derive(PartialEq, Eq)]
 pub struct Fen<A> where A: Genome {

@@ -14,34 +14,34 @@ pub mod score;
 use score::*;
 
 // // x² + 3x - 10
-// const ANSWER: LazyLock<Polynomial> = LazyLock::new(|| {
-//     Polynomial(vec![
-//         Op::Inp, Op::Inp, Op::Mul,           // x²
-//         Op::Lit(3), Op::Inp, Op::Mul, // 3x
-//         Op::Add,  Op::Lit(10), Op::Sub, // (_ + _ - 10
-//     ]) 
-// });
-
-// 7x^4 + 5x^3 − 4x^2 − x
 const ANSWER: LazyLock<Polynomial> = LazyLock::new(|| {
     Polynomial(vec![
-        Op::Inp,
-        Op::Lit(7),
-        Op::Mul,
-        Op::Lit(5),
-        Op::Add,
-        Op::Inp,
-        Op::Mul,
-        Op::Lit(4),
-        Op::Sub,
-        Op::Inp,
-        Op::Mul,
-        Op::Lit(1),
-        Op::Sub,
-        Op::Inp,
-        Op::Mul,
-    ])
+        Op::Inp, Op::Inp, Op::Mul,           // x²
+        Op::Lit(3), Op::Inp, Op::Mul, // 3x
+        Op::Add,  Op::Lit(10), Op::Sub, // (_ + _ - 10
+    ]) 
 });
+
+// 7x^4 + 5x^3 − 4x^2 − x
+// const ANSWER: LazyLock<Polynomial> = LazyLock::new(|| {
+//     Polynomial(vec![
+//         Op::Inp,
+//         Op::Lit(7),
+//         Op::Mul,
+//         Op::Lit(5),
+//         Op::Add,
+//         Op::Inp,
+//         Op::Mul,
+//         Op::Lit(4),
+//         Op::Sub,
+//         Op::Inp,
+//         Op::Mul,
+//         Op::Lit(1),
+//         Op::Sub,
+//         Op::Inp,
+//         Op::Mul,
+//     ])
+// });
 
 static oracle: LazyLock<Oracle<N_INPUTS>> = LazyLock::new(|| {
     println!("initializing OnceLock");
