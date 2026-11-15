@@ -1,35 +1,39 @@
+
+use rand::{
+    *, rngs::SmallRng,
+};
 use std::sync::{Arc, RwLock};
 
-
-
-pub trait Genome {
-    type Score: Ord;
+pub trait Genome: Clone + Send + Sync {
+    type Score: Ord + Copy + Send + Sync;
 
     fn fit(&self) -> Self::Score; 
-
     fn new() -> Self;
-    // TODO: taking the ownership could be great!
-    fn point(&mut self);
-    fn cross(&mut self, other: &mut Self); 
 
-    fn done(score: Self::Score) -> bool;
-
+    fn point (&mut self, rng: &mut SmallRng);
+    fn cross_in (
+        &self           ,
+        other:     &Self,
+        r#in : &mut Self,
+        rng  : &mut SmallRng,
+    ); 
 }
 
 
 #[derive(PartialEq, Eq)]
-pub struct Fen<A> where A: Genome {
-    pub codex: A,
-    pub score: A::Score,
+pub struct Fen<G> where G: Genome {
+    pub codex: G,
+    pub score: G::Score,
 }
 
-impl<A: Genome> PartialOrd for Fen<A> where A: Eq {
+impl<G: Genome> PartialOrd for Fen<G>
+where G: Eq {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.score.partial_cmp(&other.score)
     }
 }
 
-impl<A: Genome> Ord for Fen<A> where A: Eq {
+impl<G: Genome> Ord for Fen<G> where G: Eq {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.score.cmp(&other.score)
         

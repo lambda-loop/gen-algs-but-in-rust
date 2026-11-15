@@ -1,3 +1,3 @@
 
-pub mod word;
-pub mod polynomial;
+// pub mod word;
+// pub mod polynomial;
