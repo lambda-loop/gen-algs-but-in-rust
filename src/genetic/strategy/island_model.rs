@@ -1,5 +1,10 @@
 
-use rand::{rngs::SmallRng, SeedableRng, Rng};
+use rand::{
+    *,
+    rngs::SmallRng,
+    SeedableRng,
+    Rng
+};
 
 use super::super::genome::*;
 
@@ -16,7 +21,6 @@ use std::{
 // --------------------------------------------------
 // TABLE
 // --------------------------------------------------
-
 struct Table<'a, G: Genome> {
     elite: &'a Mutex<Box<[G]>>,
     queue: BinaryHeap<(G::Score, usize)>,
@@ -26,7 +30,8 @@ impl<'a, G: Genome> Table<'a, G> {
     fn new(elite: &'a Mutex<Box<[G]>>) -> Self {
         let pop = elite.lock().unwrap();
 
-        let mut queue = BinaryHeap::with_capacity(pop.len());
+        let mut queue
+            = BinaryHeap::with_capacity(pop.len());
 
         for (i, g) in pop.iter().enumerate() {
             queue.push((G::fit(g), i));
@@ -34,26 +39,6 @@ impl<'a, G: Genome> Table<'a, G> {
 
         Self { elite, queue }
     }
-}
-
-// --------------------------------------------------
-// BUDGET
-// --------------------------------------------------
-
-// Reserva exatamente uma avaliação.
-// Retorna false quando o budget acabou.
-fn reserve(used: &AtomicU64, budget: u64) -> bool {
-    used.fetch_update(
-        Ordering::Relaxed,
-        Ordering::Relaxed,
-        |n| {
-            if n < budget {
-                Some(n + 1)
-            } else {
-                None
-            }
-        },
-    ).is_ok()
 }
 
 // --------------------------------------------------
@@ -127,13 +112,15 @@ fn run_island<G: Genome>(
         // Workers
         for i in 0..num_islands {
             for _ in 0..num_workers {
+                let seed: u64 = random();
+                let rng = SmallRng::seed_from_u64(seed);
                 start_worker(
                     scope,
                     &elites[i],
                     island_pop,
                     &g_wrost[i],
                     sxs[i].clone(),
-                    SmallRng::from_os_rng(),
+                    rng,
                     &used,
                     budget,
                 );
@@ -142,13 +129,15 @@ fn run_island<G: Genome>(
 
         // Traveler global.
         // Recebe seus próprios clones dos senders.
+        let seed: u64 = random();
+        let rng = SmallRng::seed_from_u64(seed);
         start_traveler(
             scope,
             &elites,
             island_pop,
             &g_wrost,
             sxs.iter().cloned().collect(),
-            SmallRng::from_os_rng(),
+            rng, 
             &used,
             budget,
         );
@@ -171,16 +160,16 @@ fn run_island<G: Genome>(
 // --------------------------------------------------
 
 fn start_manager<'scope, 'env, G>(
-    scope: &'scope thread::Scope<'scope, 'env>,
-    table: Table<'env, G>,
-    g_wrost: &'env Mutex<G::Score>,
-    l_wrost: G::Score,
-    rx: Receiver<(G, G::Score)>,
+    scope  : &'scope thread::Scope<'scope, 'env>,
+    table  : Table<'env, G>                     ,
+    g_wrost: &'env Mutex<G::Score>              ,
+    l_wrost: G::Score                           ,
+    rx     : Receiver<(G, G::Score)>            ,
 )
 where
-    G: Genome + 'scope,
-    G::Score: 'scope,
-    'env: 'scope,
+    G       : Genome + 'scope,
+    G::Score: 'scope         ,
+    'env    : 'scope         ,
 {
     scope.spawn(move || {
         manager(table, g_wrost, l_wrost, rx);
@@ -188,10 +177,10 @@ where
 }
 
 fn manager<G: Genome>(
-    mut table: Table<'_, G>,
-    g_wrost: &Mutex<G::Score>,
-    mut l_wrost: G::Score,
-    rx: Receiver<(G, G::Score)>,
+    mut table  : Table<'_, G>           ,
+    g_wrost    : &Mutex<G::Score>       ,
+    mut l_wrost: G::Score               ,
+    rx         : Receiver<(G, G::Score)>,
 ) {
     while let Ok((g, s)) = rx.recv() {
         if s < l_wrost {
@@ -216,14 +205,14 @@ fn manager<G: Genome>(
 // --------------------------------------------------
 
 fn start_worker<'scope, 'env, G>(
-    scope: &'scope thread::Scope<'scope, 'env>,
-    elite: &'env Mutex<Box<[G]>>,
-    elite_len: usize,
-    g_wrost: &'env Mutex<G::Score>,
-    sx: SyncSender<(G, G::Score)>,
-    rng: SmallRng,
-    used: &'env AtomicU64,
-    budget: u64,
+    scope    : &'scope thread::Scope<'scope, 'env>,
+    elite    : &'env Mutex<Box<[G]>>              ,
+    elite_len: usize                              ,
+    g_wrost  : &'env Mutex<G::Score>              ,
+    sx       : SyncSender<(G, G::Score)>          ,
+    rng      : SmallRng                           ,
+    used     : &'env AtomicU64                    ,
+    budget   : u64                                ,
 )
 where
     G: Genome + 'scope,
@@ -239,24 +228,25 @@ where
 }
 
 fn worker<G: Genome>(
-    elite: &Mutex<Box<[G]>>,
-    elite_len: usize,
-    g_wrost: &Mutex<G::Score>,
-    sx: SyncSender<(G, G::Score)>,
-    mut rng: SmallRng,
-    used: &AtomicU64,
-    budget: u64,
+    elite    : &Mutex<Box<[G]>>         ,
+    elite_len: usize                    ,
+    g_wrost  : &Mutex<G::Score>         ,
+    sx       : SyncSender<(G, G::Score)>,
+    mut rng  : SmallRng                 ,
+    used     : &AtomicU64               ,
+    budget   : u64                      ,
 ) {
     let mut elite_c = Vec::with_capacity(elite_len);
     let mut buffer = G::new();
 
+    let step = (elite_len * elite_len) as u64;
     loop {
-        // Evita copiar a população se acabou.
-        if used.load(Ordering::Relaxed) >= budget {
+        if used.load(Ordering::Relaxed) > budget {
             return;
         }
 
-        let mut l_worst = *g_wrost.lock().unwrap();
+        used.fetch_add(step, Ordering::Relaxed);
+        let l_worst = *g_wrost.lock().unwrap();
 
         {
             let elite = elite.lock().unwrap();
@@ -265,18 +255,12 @@ fn worker<G: Genome>(
 
         for l in &elite_c {
             for r in &elite_c {
-                // Reserva antes da avaliação.
-                if !reserve(used, budget) {
-                    return;
-                }
-
                 l.cross_in(r, &mut buffer, &mut rng);
                 buffer.point(&mut rng);
 
                 let s = G::fit(&buffer);
 
                 if s < l_worst {
-                    l_worst = s;
 
                     if sx.send((buffer.clone(), s)).is_err() {
                         return;
@@ -317,13 +301,13 @@ where
 }
 
 fn traveler<G: Genome>(
-    islands: &[Mutex<Box<[G]>>],
-    elite_len: usize,
-    g_wrost: &[Mutex<G::Score>],
-    sxs: Vec<SyncSender<(G, G::Score)>>,
-    mut rng: SmallRng,
-    used: &AtomicU64,
-    budget: u64,
+    islands  : &[Mutex<Box<[G]>>]            ,
+    elite_len: usize                         ,
+    g_wrost  : &[Mutex<G::Score>]            ,
+    sxs      : Vec<SyncSender<(G, G::Score)>>,
+    mut rng  : SmallRng                      ,
+    used     : &AtomicU64                    ,
+    budget   : u64                           ,
 ) {
     let islands_len = islands.len();
 
@@ -331,10 +315,13 @@ fn traveler<G: Genome>(
     let mut elite_c_r = Vec::with_capacity(elite_len);
     let mut buffer = G::new();
 
+    let step = (elite_len * elite_len) as u64;
     loop {
-        if used.load(Ordering::Relaxed) >= budget {
+        if used.load(Ordering::Relaxed) > budget {
             return;
         }
+
+        used.fetch_add(step, Ordering::Relaxed);
 
         let l_isl = rng.random_range(0..islands_len);
         let r_isl = rng.random_range(0..islands_len);
@@ -350,22 +337,17 @@ fn traveler<G: Genome>(
             elite_c_r.extend(elite.iter().cloned());
         }
 
-        let mut l_worst = *g_wrost[t_isl].lock().unwrap();
+        let l_worst = *g_wrost[t_isl].lock().unwrap();
         let sx = &sxs[t_isl];
 
         for l in &elite_c_l {
             for r in &elite_c_r {
-                if !reserve(used, budget) {
-                    return;
-                }
-
                 l.cross_in(r, &mut buffer, &mut rng);
                 buffer.point(&mut rng);
 
                 let s = G::fit(&buffer);
 
                 if s < l_worst {
-                    l_worst = s;
 
                     if sx.send((buffer.clone(), s)).is_err() {
                         return;
